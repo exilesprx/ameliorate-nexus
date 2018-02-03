@@ -1,0 +1,23 @@
+{
+  "name": "ameliorate/nexus",
+  "description": "A package to setup a nexus of stops which are processed based on the result of the previous stop.",
+  "type": "package",
+  "keywords": ["nexus"],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Exilesprx",
+      "email": "campbell.andrew86@yahoo.com"
+    }
+  ],
+  "require": {
+    "illuminate/contracts": "^5.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "Ameliorate\\": "Ameliorate/"
+    }
+  },
+  "version": "0.0.1",
+  "minimum-stability": "dev"
+}
