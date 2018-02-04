@@ -16,7 +16,7 @@ class Nexus implements NexusContract
     /**
      * Use this constant to arrive a final destination.
      */
-    const LAND = "land";
+    const STOP = "stop";
 
     /**
      * Use this constant to fill the array indexes which will never run.
@@ -114,7 +114,7 @@ class Nexus implements NexusContract
         $next = key($this->stops);
 
         do {
-            if($next == self::LAND) {
+            if($next == self::STOP) {
                 break;
             }
 
