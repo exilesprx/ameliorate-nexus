@@ -2,6 +2,7 @@
 
 namespace Ameliorate;
 
+use Ameliorate\Contracts\DestinationContract;
 use Closure;
 use RuntimeException;
 use Ameliorate\Contracts\NexusContract;
@@ -38,11 +39,11 @@ class Nexus implements NexusContract
     protected $traveler;
 
     /**
-     * The array of class stops.
+     * The array of class destinations.
      *
      * @var array
      */
-    protected $stops = [];
+    protected $destinations = [];
 
     /**
      * The method to call on each location.
@@ -76,25 +77,26 @@ class Nexus implements NexusContract
     }
 
     /**
-     * Set the stops of the nexus.
+     * Set the stops of the nexus. If a callable is
+     * used, the process proceeds to the next index.
      *
-     * @param  dynamic|array $stops
+     * @param  array $destinations
      * @return $this
      */
-    public function to($stops)
+    public function to(array $destinations)
     {
-        $this->stops = is_array($stops) ? $stops : func_get_args();
+        $this->destinations = $destinations;
 
         return $this;
     }
 
     /**
-     * Set the method to call on the locations.
+     * Set the method to call on the destinations.
      *
      * @param  string $method
      * @return $this
      */
-    public function via($method)
+    public function via(string $method)
     {
         $this->method = $method;
 
@@ -109,28 +111,23 @@ class Nexus implements NexusContract
      */
     public function arrive(Closure $destination)
     {
-        reset($this->stops);
+        reset($this->destinations);
 
-        $next = key($this->stops);
+        $next = key($this->destinations);
 
         do {
             if($next == self::STOP) {
                 break;
             }
 
-            $obj = $this->resolve($next);
+            list($left, $right) = $this->getNextDestinations($next);
 
-            $turnRight = $obj->handle($this->traveler, $this->luggage());
-
-            list($left, $right) = $this->stops[$next];
-
-            if($turnRight) {
+            if($goRight = $this->handle($next)) {
                 $next = $right;
                 continue;
             }
 
             $next = $left;
-
         }
         while($next);
 
@@ -155,17 +152,53 @@ class Nexus implements NexusContract
     /**
      * Resolves objects using the container.
      *
-     * @param $instance
-     * @return mixed
+     * @param string $instance
+     * @return DestinationContract
      */
-    protected function resolve($instance)
+    protected function resolve(string $instance)
     {
         $object = $this->container->make($instance);
 
         if(!method_exists($object, $this->method)) {
-            throw new RuntimeException("{$object} must implement a {$this->method}(bool, Closure) function.");
+            throw new RuntimeException("{$instance} must implement a {$this->method}(mixed, Closure) function.");
         }
 
         return $object;
+    }
+
+    /**
+     * Handles the next stop.
+     *
+     * @param $next
+     * @return boolean
+     */
+    protected function handle($next)
+    {
+        if(is_callable($next)) {
+            return $next($this->traveler, $this->luggage());
+        }
+
+        $obj = $this->resolve($next);
+//var_dump("Resolved:", $obj);
+        return $obj->handle($this->traveler, $this->luggage());
+    }
+
+    /**
+     * Get the next stops.
+     *
+     * @param $next
+     * @return mixed
+     */
+    protected function getNextDestinations($next)
+    {
+        if(is_callable($next)) {
+            next($this->destinations);
+
+            $next = key($this->destinations);
+
+            return $this->destinations[$next];
+        }
+
+        return $this->destinations[$next];
     }
 }

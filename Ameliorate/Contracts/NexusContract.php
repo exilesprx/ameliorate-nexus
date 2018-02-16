@@ -19,20 +19,20 @@ interface NexusContract
     public function send($traveler);
 
     /**
-     * Set the stops of the nexus.
+     * Set the destinations of the nexus.
      *
-     * @param  dynamic|array $stops
+     * @param  array $destinations
      * @return $this
      */
-    public function to($stops);
+    public function to(array $destinations);
 
     /**
-     * Set the method to call on the stops.
+     * Set the method to call on the destinations.
      *
      * @param  string $method
      * @return $this
      */
-    public function via($method);
+    public function via(string $method);
 
     /**
      * Run the nexus with a final destination callback.
