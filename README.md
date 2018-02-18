@@ -9,12 +9,12 @@ Send a traveler (payload) through an array of jobs. The traveler can also be a c
 public function send($traveler);
 ```
 
-Set the stops the traveler (payload) will travel to. Not all stops will be executed. See "stops" below.
+Set the destinations the traveler (payload) will travel to. Not all destinations will be executed. See "destinations" below.
 ```php
-public function to(array $stops);
+public function to(array $destinations);
 ```
 
-Set the method the stops should execute.
+Set the method the destinations should execute.
 ```php
 public function via(string $method);
 ```
@@ -27,7 +27,7 @@ public function arrive(Closure $destination);
 ## Stops
 Each stop should return either true or false. This return value will determine which stop is executed next.
 ```php
-$stops = [
+$destinations = [
 //                     False                    True
     JobOne::class   => [JobTwo::class,          JobThree::class],
     JobThree::class => [JobFour::class,         JobFive::class],
@@ -50,7 +50,7 @@ $nexus = new Nexus($container);
 
 $traveler = ["person" => ["age" => 27, "name" => "tester"]];
 
-$stops = [
+$destinations = [
 //                     False                    True
     JobOne::class   => [JobTwo::class,          JobThree::class],
     JobThree::class => [JobFour::class,         JobFive::class],
@@ -64,7 +64,7 @@ $finalDestination = function($destination) {
 };
 
 $nexus->send($traveler)
-      ->to($stops)
+      ->to($destinations)
       ->arrive($finalDestination);
 
 // Output
