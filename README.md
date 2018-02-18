@@ -2,7 +2,7 @@
 
 A package to setup a nexus of stops which are processed based on the result of the previous stop.
 
-## Contract
+## Nexus Contract
 
 Send a traveler (payload) through an array of jobs. The traveler can also be a class, such as a Domain Transfer Object (DTO), since the argument accepts mixed types.
 ```php
@@ -24,17 +24,51 @@ Set the final destination of the traveler (payload).
 public function arrive(Closure $destination);
 ```
 
-## Stops
-Each stop should return either true or false. This return value will determine which stop is executed next.
+## Destination Contract
+
+This contract is optional. However, if a destination is a callable, this method must be implemented.
+```php
+public function handle($luggage, \Closure $next);
+```
+
+## Destinations
+Each destination should return either true or false. This return value will determine which destination is executed next.
 ```php
 $destinations = [
 //                     False                    True
     JobOne::class   => [JobTwo::class,          JobThree::class],
     JobThree::class => [JobFour::class,         JobFive::class],
     JobFour::class  => [JobFive::class,         JobSix::class],
-    JobFive::class  => [JobSix::class,          Nexus::UNINHABITED],
-    JobSix::class   => [Nexus::STOP,            Nexus::STOP] // JobSix always returns true
+    JobFive::class  => [JobSix::class,          Nexus::UNINHABITED], // JobSix always returns true
+    JobSix::class   => [Nexus::STOP,            Nexus::STOP]
 ];
+```
+
+### Closure destinations
+
+Destinations can be a Closure. However, unlike classes which can skip over destinations, closures will use the destination defined immediately afterwards as the next destination. 
+```php
+$nexus = new Nexus($container);
+
+$traveler = [];
+
+$callable = function($payload, \Closure $next) {
+
+    return $next($payload, true);
+};
+
+$stops = [
+    "Foo"  => [$callable, Nexus::STOP],
+    Nexus::STOP
+];
+
+$nexus->send($traveler)
+    ->to($stops)
+    ->arrive(
+        function($payload) {
+            // Do some stuff
+        }
+    );
 ```
 
 ### Halt processing
