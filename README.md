@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/exilesprx/ameliorate-nexus/tree/master.svg?style=svg)](https://circleci.com/gh/exilesprx/ameliorate-nexus/tree/master)
+
 # Ameliorate Nexus
 
 A package to setup a nexus of stops which are processed based on the result of the previous stop.
