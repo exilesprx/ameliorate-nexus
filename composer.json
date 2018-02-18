@@ -4,6 +4,7 @@
   "type": "package",
   "keywords": ["nexus"],
   "license": "MIT",
+  "version": "1.0.0",
   "authors": [
     {
       "name": "Exilesprx",
@@ -19,7 +20,6 @@
       "Ameliorate\\": "Ameliorate/"
     }
   },
-  "version": "0.0.1",
   "minimum-stability": "dev",
   "require-dev": {
     "phpunit/phpunit": "^7.0",
