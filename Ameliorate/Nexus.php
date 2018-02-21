@@ -120,10 +120,13 @@ class Nexus implements NexusContract
                 break;
             }
 
-            list($left, $right) = $this->getNextDestinations($next);
+            list($left, $right) = $this->destinations[$next];
 
-            if($goRight = $this->handle($next)) {
+            $obj = $this->resolve($next);
+
+            if($goRight = $obj->handle($this->traveler, $this->luggage())) {
                 $next = $right;
+
                 continue;
             }
 
@@ -157,48 +160,12 @@ class Nexus implements NexusContract
      */
     protected function resolve(string $instance)
     {
-        $object = $this->container->make($instance);
+        $instance = $this->container->make($instance);
 
-        if(!method_exists($object, $this->method)) {
+        if(!method_exists($instance, $this->method)) {
             throw new RuntimeException("{$instance} must implement a {$this->method}(mixed, Closure) function.");
         }
 
-        return $object;
-    }
-
-    /**
-     * Handles the next stop.
-     *
-     * @param $next
-     * @return boolean
-     */
-    protected function handle($next)
-    {
-        if(is_callable($next)) {
-            return $next($this->traveler, $this->luggage());
-        }
-
-        $obj = $this->resolve($next);
-//var_dump("Resolved:", $obj);
-        return $obj->handle($this->traveler, $this->luggage());
-    }
-
-    /**
-     * Get the next stops.
-     *
-     * @param $next
-     * @return mixed
-     */
-    protected function getNextDestinations($next)
-    {
-        if(is_callable($next)) {
-            next($this->destinations);
-
-            $next = key($this->destinations);
-
-            return $this->destinations[$next];
-        }
-
-        return $this->destinations[$next];
+        return $instance;
     }
 }
