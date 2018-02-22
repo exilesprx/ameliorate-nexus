@@ -4,6 +4,8 @@
 
 A package to setup a nexus of stops which are processed based on the result of the previous stop.
 
+Note: Passing an object that is already initialized is not supported. That type of functionality should be handled by the container.
+
 ## Nexus Contract
 
 Send a traveler (payload) through an array of jobs. The traveler can also be a class, such as a Domain Transfer Object (DTO), since the argument accepts mixed types.
@@ -28,7 +30,7 @@ public function arrive(Closure $destination);
 
 ## Destination Contract
 
-This contract is optional. However, if a destination is a callable, this method must be implemented.
+This contract is optional.
 ```php
 public function handle($luggage, \Closure $next);
 ```
@@ -44,33 +46,6 @@ $destinations = [
     JobFive::class  => [JobSix::class,          Nexus::UNINHABITED], // JobSix always returns true
     JobSix::class   => [Nexus::STOP,            Nexus::STOP]
 ];
-```
-
-### Closure destinations
-
-Destinations can be a Closure. However, unlike classes which can skip over destinations, closures will use the destination defined immediately afterwards as the next destination. 
-```php
-$nexus = new Nexus($container);
-
-$traveler = [];
-
-$callable = function($payload, \Closure $next) {
-
-    return $next($payload, true);
-};
-
-$stops = [
-    "Foo"  => [$callable, Nexus::STOP],
-    Nexus::STOP
-];
-
-$nexus->send($traveler)
-    ->to($stops)
-    ->arrive(
-        function($payload) {
-            // Do some stuff
-        }
-    );
 ```
 
 ### Halt processing
