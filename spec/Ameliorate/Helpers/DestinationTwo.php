@@ -1,6 +1,6 @@
 <?php
 
-namespace spec\Helpers;
+namespace spec\Ameliorate\Helpers;
 
 class DestinationTwo extends DestinationOne
 {

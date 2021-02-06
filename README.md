@@ -6,11 +6,15 @@ A package to setup a nexus of stops which are processed based on the result of t
 
 Note: Passing an object that is already initialized is not supported. That type of functionality should be handled by the container.
 
+## Dependencies
+
+A container to resolve class instance such as: ```https://github.com/illuminate/container```
+
 ## Nexus Contract
 
-Send a traveler (payload) through an array of jobs. The traveler can also be a class, such as a Domain Transfer Object (DTO), since the argument accepts mixed types.
+Send a traveler (payload) through an array of jobs.
 ```php
-public function send($traveler);
+public function send(TravelerContract $traveler);
 ```
 
 Set the destinations the traveler (payload) will travel to. Not all destinations will be executed. See "destinations" below.
@@ -30,21 +34,19 @@ public function arrive(Closure $destination);
 
 ## Destination Contract
 
-This contract is optional.
+Handle the traveler at the destination.
 ```php
-public function handle($luggage, \Closure $next);
+public function handle(TravelerContract $traveler, Closure $next);
 ```
 
 ## Destinations
 Each destination should return either true or false. This return value will determine which destination is executed next.
 ```php
 $destinations = [
-//                     False                    True
-    JobOne::class   => [JobTwo::class,          JobThree::class],
-    JobThree::class => [JobFour::class,         JobFive::class],
-    JobFour::class  => [JobFive::class,         JobSix::class],
-    JobFive::class  => [JobSix::class,          Nexus::UNINHABITED], // JobSix always returns true
-    JobSix::class   => [Nexus::STOP,            Nexus::STOP]
+    Addition::class         => [Nexus::UNINHABITED, Multiplication::class],
+    Multiplication::class   => [Subtraction::class, Nexus::UNINHABITED],
+    Subtraction::class      => [Nexus::UNINHABITED, Division::class],
+    Division::class         => [Nexus::STOP,        Nexus::STOP]
 ];
 ```
 
@@ -57,39 +59,44 @@ Use the constant `Nexus::UNINHABITED` to fill the job array in unreachable locat
 ## Usage
 
 ```php
-$nexus = new Nexus($container);
+$rules = new DestinationRules(false);
 
-$traveler = ["person" => ["age" => 27, "name" => "tester"]];
+$container = new Container();
 
+$nexus = new Nexus($rules, $container);
+
+$traveler = new Math(5); // starts with initial value of 5
+
+/**
+ * Destination path is as follows:
+ * - start with 5
+ * - add 3, then take truthy path
+ * - multiply by 6, then take falsy path
+ * - subtract 3, then take truthy path
+ * - divide 4, then stop
+ */
 $destinations = [
-//                     False                    True
-    JobOne::class   => [JobTwo::class,          JobThree::class],
-    JobThree::class => [JobFour::class,         JobFive::class],
-    JobFour::class  => [JobFive::class,         JobSix::class],
-    JobFive::class  => [JobSix::class,          Nexus::UNINHABITED],  // JobSix always returns true, so Nexus:UNINHABITED is used.
-    JobSix::class   => [Nexus::STOP,            Nexus::STOP]          // End the processing by using Nexus::STOP
+
+    // Class to process        // False             // True
+
+    // Container returns new Addition(3) - adds 3
+    Addition::class         => [Nexus::UNINHABITED, Multiplication::class],
+    
+    // Container returns new Multiplication(6, false) - multiplies by 6
+    Multiplication::class   => [Subtraction::class, Nexus::UNINHABITED],
+    
+    // Container returns new Subtraction(2) - subtracts 2
+    Subtraction::class      => [Nexus::UNINHABITED, Division::class],
+    
+    // Container returns new Division(4) - divides by 4
+    Division::class         => [Nexus::STOP,        Nexus::STOP]
 ];
 
-$finalDestination = function($destination) {
-    print_r($destination);
-};
-
 $nexus->send($traveler)
-      ->to($destinations)
-      ->arrive($finalDestination);
-
-// Output
-//   Note: For this example, each job appends its short name and the value it returns.
-//  [
-//      [person] => [
-//          [age]   => 27,
-//          [name]  => tester
-//      ],
-//      [jobone]    => true,
-//      [jobthree]  => false,
-//      [jobfive]   => false,
-//      [jobsix]    => true
-//  ]
+    ->to($destinations)
+    ->arrive(function(Math $traveler) {
+        Assert::assertEquals(11.5, $traveler->getValue());
+    });
 ```
 
 #### Credits

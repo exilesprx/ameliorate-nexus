@@ -13,32 +13,32 @@ interface NexusContract
     /**
      * Set the traveler object being sent on the nexus.
      *
-     * @param  mixed $traveler
-     * @return $this
+     * @param  TravelerContract $traveler
+     * @return self
      */
-    public function send($traveler);
+    public function send(TravelerContract $traveler) : NexusContract;
 
     /**
      * Set the destinations of the nexus.
      *
      * @param  array $destinations
-     * @return $this
+     * @return self
      */
-    public function to(array $destinations);
+    public function to(array $destinations) : NexusContract;
 
     /**
      * Set the method to call on the destinations.
      *
      * @param  string $method
-     * @return $this
+     * @return self
      */
-    public function via(string $method);
+    public function via(string $method) : NexusContract;
 
     /**
      * Run the nexus with a final destination callback.
      *
-     * @param  \Closure $destination
-     * @return mixed
+     * @param  Closure $destination
+     * @return void
      */
-    public function arrive(Closure $destination);
+    public function arrive(Closure $destination) : void;
 }
