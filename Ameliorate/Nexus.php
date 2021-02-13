@@ -3,7 +3,10 @@
 namespace Ameliorate;
 
 use Ameliorate\Contracts\DestinationContract;
+use Ameliorate\Contracts\TravelerContract;
+use Ameliorate\ValueObjects\DestinationRules;
 use Closure;
+use Exception;
 use RuntimeException;
 use Ameliorate\Contracts\NexusContract;
 use Illuminate\Contracts\Container\Container;
@@ -53,23 +56,32 @@ class Nexus implements NexusContract
     protected $method = 'handle';
 
     /**
+     * The standard destination rules.
+     *
+     * @var DestinationRules
+     */
+    protected $rules;
+
+    /**
      * Create a new class instance.
      *
-     * @param  \Illuminate\Contracts\Container\Container|null $container
-     * @return void
+     * @param DestinationRules $rules
+     * @param \Illuminate\Contracts\Container\Container $container
      */
-    public function __construct(Container $container = null)
+    public function __construct(DestinationRules $rules, Container $container)
     {
+        $this->rules = $rules;
+
         $this->container = $container;
     }
 
     /**
      * Set the traveler object being sent on the nexus.
      *
-     * @param  mixed $traveler
-     * @return $this
+     * @param  TravelerContract $traveler
+     * @return self
      */
-    public function send($traveler)
+    public function send(TravelerContract $traveler) : NexusContract
     {
         $this->traveler = $traveler;
 
@@ -81,9 +93,9 @@ class Nexus implements NexusContract
      * used, the process proceeds to the next index.
      *
      * @param  array $destinations
-     * @return $this
+     * @return self
      */
-    public function to(array $destinations)
+    public function to(array $destinations) : NexusContract
     {
         $this->destinations = $destinations;
 
@@ -94,9 +106,9 @@ class Nexus implements NexusContract
      * Set the method to call on the destinations.
      *
      * @param  string $method
-     * @return $this
+     * @return self
      */
-    public function via(string $method)
+    public function via(string $method) : NexusContract
     {
         $this->method = $method;
 
@@ -106,10 +118,11 @@ class Nexus implements NexusContract
     /**
      * Run the nexus with a final destination callback.
      *
-     * @param  \Closure $destination
-     * @return mixed
+     * @param Closure $destination
+     * @return void
+     * @throws Exception
      */
-    public function arrive(Closure $destination)
+    public function arrive(Closure $destination) : void
     {
         reset($this->destinations);
 
@@ -124,7 +137,7 @@ class Nexus implements NexusContract
 
             $obj = $this->resolve($next);
 
-            if($goRight = $obj->handle($this->traveler, $this->luggage())) {
+            if($goRight = $this->isTruthy($obj)) {
                 $next = $right;
 
                 continue;
@@ -142,7 +155,7 @@ class Nexus implements NexusContract
      *
      * @return Closure
      */
-    protected function luggage()
+    protected function luggage() : Closure
     {
         return function($traveler, bool $bool) {
 
@@ -155,17 +168,40 @@ class Nexus implements NexusContract
     /**
      * Resolves objects using the container.
      *
-     * @param string $instance
+     * @param string|DestinationContract $instance
      * @return DestinationContract
      */
-    protected function resolve(string $instance)
+    protected function resolve($instance) : DestinationContract
     {
-        $instance = $this->container->make($instance);
+        if (!$instance instanceof DestinationContract) {
+            $instance = $this->container->make($instance);
+        }
 
         if(!method_exists($instance, $this->method)) {
             throw new RuntimeException("{$instance} must implement a {$this->method}(mixed, Closure) function.");
         }
 
         return $instance;
+    }
+
+    /**
+     * Determines if the the traveler should go right.
+     *
+     * @param DestinationContract $destination
+     * @return bool
+     * @throws Exception
+     */
+    protected function isTruthy(DestinationContract $destination) : bool
+    {
+        try {
+            return $destination->handle($this->traveler, $this->luggage());
+        } catch (Exception $exception) {
+
+            if (!$this->rules->shouldCatchExceptions()) {
+                throw $exception;
+            }
+
+            return $this->rules->handle($exception, $this->traveler);
+        }
     }
 }

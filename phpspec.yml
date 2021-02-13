@@ -1,1 +1,4 @@
-composer_suite_detection: true
+suites:
+  acme_suite:
+    namespace: Ameliorate
+    src_path: Ameliorate

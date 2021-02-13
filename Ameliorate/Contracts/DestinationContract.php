@@ -2,6 +2,8 @@
 
 namespace Ameliorate\Contracts;
 
+use Closure;
+
 /**
  * Interface DestinationContract
  * @package Ameliorate\Contracts
@@ -9,9 +11,9 @@ namespace Ameliorate\Contracts;
 interface DestinationContract
 {
     /**
-     * @param mixed $luggage
-     * @param \Closure $next
-     * @return mixed
+     * @param TravelerContract $traveler
+     * @param Closure $next
+     * @return bool
      */
-    public function handle($luggage, \Closure $next);
+    public function handle(TravelerContract $traveler, Closure $next) : bool;
 }

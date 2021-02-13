@@ -3,16 +3,17 @@
 namespace spec\Ameliorate;
 
 use Ameliorate\Nexus;
+use Ameliorate\ValueObjects\DestinationRules;
 use Illuminate\Contracts\Container\Container;
 use PhpSpec\ObjectBehavior;
 use Prophecy\Argument;
 use RuntimeException;
-use spec\Helpers\DestinationOne;
-use spec\Helpers\DestinationTwo;
-use spec\Helpers\DestinationThree;
-use spec\Helpers\FakeTraveler;
-use spec\Helpers\FakeHandler;
-use spec\Helpers\FakeArrival;
+use spec\Ameliorate\Helpers\DestinationOne;
+use spec\Ameliorate\Helpers\DestinationTwo;
+use spec\Ameliorate\Helpers\DestinationThree;
+use spec\Ameliorate\Helpers\FakeTraveler;
+use spec\Ameliorate\Helpers\FakeHandler;
+use spec\Ameliorate\Helpers\FakeArrival;
 
 /**
  * Class NexusSpec
@@ -24,10 +25,11 @@ class NexusSpec extends ObjectBehavior
      * Nexus should be constructor with a container instance
      *
      * @param Container|\PhpSpec\Wrapper\Collaborator $container
+     * @param DestinationRules $rules
      */
-    public function let(Container $container)
+    public function let(Container $container, DestinationRules $rules)
     {
-        $this->beConstructedWith($container);
+        $this->beConstructedWith($rules, $container);
     }
 
     /**
@@ -41,10 +43,8 @@ class NexusSpec extends ObjectBehavior
     /**
      * Make sure the same instance is return so chaining can occur
      */
-    public function it_should_return_this_when_calling_send()
+    public function it_should_return_this_when_calling_send(FakeTraveler $traveler)
     {
-        $traveler = [];
-
         $this->send($traveler)->shouldReturn($this);
     }
 
@@ -76,10 +76,8 @@ class NexusSpec extends ObjectBehavior
      * @param \PhpSpec\Wrapper\Collaborator|DestinationOne $one
      * @param \PhpSpec\Wrapper\Collaborator $container
      */
-    public function it_should_call_handle_on_class_one_once(DestinationOne $one, $container)
+    public function it_should_call_handle_on_class_one_once(DestinationOne $one, FakeTraveler $traveler, $container)
     {
-        $traveler = [];
-
         $destinations = [
             DestinationOne::class => [Nexus::STOP, Nexus::STOP]
         ];
@@ -90,9 +88,9 @@ class NexusSpec extends ObjectBehavior
             ->shouldBeCalled()
             ->willReturn($one);
 
-        $one->handle(Argument::type('array'), Argument::type('Closure'))
+        $one->handle(Argument::any(), Argument::type('Closure'))
             ->shouldBeCalled()
-            ->willReturn();
+            ->willReturn(true);
 
         $this->send($traveler)
             ->to($destinations)
@@ -108,10 +106,8 @@ class NexusSpec extends ObjectBehavior
      * @param \PhpSpec\Wrapper\Collaborator|DestinationThree $three
      * @param \PhpSpec\Wrapper\Collaborator $container
      */
-    public function it_should_call_handle_on_class_one_two_and_three_once(DestinationOne $one, DestinationTwo $two, DestinationThree $three, $container)
+    public function it_should_call_handle_on_class_one_two_and_three_once(DestinationOne $one, DestinationTwo $two, DestinationThree $three, FakeTraveler $traveler, $container)
     {
-        $traveler = [];
-
         $destinations = [
             DestinationOne::class => [DestinationTwo::class, Nexus::UNINHABITED],
             DestinationTwo::class => [Nexus::UNINHABITED, DestinationThree::class],
@@ -132,15 +128,15 @@ class NexusSpec extends ObjectBehavior
             ->shouldBeCalled()
             ->willReturn($three);
 
-        $one->handle(Argument::type('array'), Argument::type('Closure'))
+        $one->handle(Argument::any(), Argument::type('Closure'))
             ->shouldBeCalled()
             ->willReturn(false);
 
-        $two->handle(Argument::type('array'), Argument::type('Closure'))
+        $two->handle(Argument::any(), Argument::type('Closure'))
             ->shouldBeCalled()
             ->willReturn(true);
 
-        $three->handle(Argument::type('array'), Argument::type('Closure'))
+        $three->handle(Argument::any(), Argument::type('Closure'))
             ->shouldBeCalled()
             ->willReturn(true);
 
@@ -183,10 +179,8 @@ class NexusSpec extends ObjectBehavior
      *
      * @param \PhpSpec\Wrapper\Collaborator|FakeArrival $arrive
      */
-    public function it_should_call_the_final_destination(FakeArrival $arrive)
+    public function it_should_call_the_final_destination(FakeArrival $arrive, FakeTraveler $traveler)
     {
-        $traveler = [];
-
         $destinations = [
             Nexus::STOP
         ];
@@ -206,10 +200,8 @@ class NexusSpec extends ObjectBehavior
      *
      * @param \PhpSpec\Wrapper\Collaborator $container
      */
-    public function it_should_throw_a_runtime_exception_when_resolving_a_class($container)
+    public function it_should_throw_a_runtime_exception_when_resolving_a_class(FakeTraveler $traveler, $container)
     {
-        $traveler = [];
-
         $destinations = [
             "SomeFakeClass" => [Nexus::STOP, Nexus::STOP],
         ];
